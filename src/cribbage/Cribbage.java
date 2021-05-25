@@ -127,13 +127,14 @@ public class Cribbage extends CardGame {
   private final Actor[] scoreActors = {null, null}; //, null, null };
   private final Location textLocation = new Location(350, 450);
   private final Hand[] hands = new Hand[nPlayers];
+  private final Hand[] copiedHands = new Hand[nPlayers];
   private Hand starter;
   private Hand crib;
 
   public static void setStatus(String string) { cribbage.setStatusText(string); }
 
 static private final IPlayer[] players = new IPlayer[nPlayers];
-private final int[] scores = new int[nPlayers];
+static private int[] scores = new int[nPlayers];
 
 final Font normalFont = new Font("Serif", Font.BOLD, 24);
 final Font bigFont = new Font("Serif", Font.BOLD, 36);
@@ -145,6 +146,12 @@ private void initScore() {
 		 addActor(scoreActors[i], scoreLocations[i]);
 	 }
   }
+
+//add score//
+public static void addScore(int player, int amount) throws ArrayIndexOutOfBoundsException{
+	scores[player] += amount;
+}
+
 
 private void updateScore(int player) {
 	removeActor(scoreActors[player]);
@@ -201,6 +208,9 @@ private void starter(Hand pack) {
 	Card dealt = randomCard(pack);
 	dealt.setVerso(false);
 	transfer(dealt, starter);
+	
+	// scoring
+
 }
 
 int total(Hand hand) {
@@ -226,6 +236,7 @@ class Segment {
 }
 
 private void play() {
+	ScoreSystem scoreSystem = ScoreSystem.getInstance();
 	final int thirtyone = 31;
 	List<Hand> segments = new ArrayList<>();
 	int currentPlayer = 0; // Player 1 is dealer
@@ -239,22 +250,28 @@ private void play() {
 				// Another "go" after previous one with no intervening cards
 				// lastPlayer gets 1 point for a "go"
 				s.newSegment = true;
+				System.out.println("GO!");
 			} else {
 				// currentPlayer says "go"
 				s.go = true;
 			}
-			currentPlayer = (currentPlayer+1) % 2;
+			currentPlayer = (currentPlayer+1) % nPlayers;
 		} else {
+			
 			s.lastPlayer = currentPlayer; // last Player to play a card in this segment
 			transfer(nextCard, s.segment);
+			//add play scoring//
+			scoreSystem.ScoringPlay(s.segment, currentPlayer);
+			updateScore(currentPlayer);
+			// 
+			
 			if (total(s.segment) == thirtyone) {
 				// lastPlayer gets 2 points for a 31
 				s.newSegment = true;
-				currentPlayer = (currentPlayer+1) % 2;
+				currentPlayer = (currentPlayer+1) % nPlayers;
 			} else {
-				// if total(segment) == 15, lastPlayer gets 2 points for a 15
-				if (!s.go) { // if it is "go" then same player gets another turn
-					currentPlayer = (currentPlayer+1) % 2;
+				if (!s.go) { // if the other not already "go" (s.go is False) then switch to him
+					currentPlayer = (currentPlayer+1) % nPlayers;
 				}
 			}
 		}
@@ -263,17 +280,42 @@ private void play() {
 			s.reset(segments);
 		}
 	}
+	// score to last player if it not 31
+	if (s.lastPlayer != -1) {
+		scoreSystem.ScoringGo(s.lastPlayer);
+		updateScore(s.lastPlayer);
+	}
 }
 
 void showHandsCrib() {
+	ScoreSystem scoreSystem = ScoreSystem.getInstance();
 	// score player 0 (non dealer)
+	scoreSystem.ScoringShow(starter, copiedHands[0], 0);
+	updateScore(0);
 	// score player 1 (dealer)
+	scoreSystem.ScoringShow(starter, copiedHands[1], 1);
+	updateScore(1);
 	// score crib (for dealer)
+	scoreSystem.ScoringShow(starter, crib, 1);
+	updateScore(1);
+}
+
+void backupCards() {
+	for (int i=0; i<nPlayers; i++) {
+		copiedHands[i] = new Hand(deck);
+		for (Card c : hands[i].getCardList()) {
+			Enum cardSuit = c.getSuit();
+			Enum cardRank = c.getRank();
+			copiedHands[i].insert(cardSuit, cardRank, false);
+		}
+	}
 }
 
   public Cribbage()
   {
     super(850, 700, 30);
+	// game speed, higher = slower
+	setSimulationPeriod(1);
     cribbage = this;
     setTitle("Cribbage (V" + version + ") Constructed for UofM SWEN30006 with JGameGrid (www.aplu.ch)");
     setStatusText("Initializing...");
@@ -291,6 +333,7 @@ void showHandsCrib() {
 	  deal(pack, hands);
 	  discardToCrib();
 	  starter(pack);
+	  backupCards();
 	  play();
 	  showHandsCrib();
 

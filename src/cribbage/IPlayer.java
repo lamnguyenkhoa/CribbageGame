@@ -18,6 +18,7 @@ public abstract class IPlayer {
     abstract Card selectToLay();
     Card lay(int limit) {
         // System.out.println("lay(" + limit + ")");
+    	// First, we take out unlayable cards and set them aside
         Hand unlayable = new Hand(deck);
         for (Card c: ((ArrayList<Card>) hand.getCardList().clone()))  // Modify list, so need to iterate over clone
             if (Cribbage.cardValue(c) > limit) {
@@ -26,8 +27,10 @@ public abstract class IPlayer {
                 unlayable.insert(c, false);
             }
         // hand.draw(); Cribbage.delay(1000);
+        // Now we choose a card
         Card s = selectToLay();
-            hand.insert(unlayable, true);
-            return s;
+        // Then we re-insert those unlayable cards back to our hand
+        hand.insert(unlayable, true);
+        return s;
     }
 }

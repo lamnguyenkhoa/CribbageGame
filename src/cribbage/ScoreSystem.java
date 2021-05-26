@@ -11,7 +11,6 @@ import java.util.*;
 //singleton facade class for scoring//
 public class ScoreSystem {
 
-	public static int DEALER = 1;
 	private static int STARTERISJACK_SCORE = 2;
 	private static int GO_SCORE = 1;
 	private static int FIFTEEN = 15;
@@ -49,16 +48,12 @@ public class ScoreSystem {
 	
 	public void ScoringStarter(Hand hand) {
 		if(hand.getFirst().getRank() == Rank.JACK) {
-			//starter card is a jack, dealer gets 2 point//
-			Cribbage.addScore(DEALER, STARTERISJACK_SCORE);
-			
-			//LOGGING//
+			Cribbage.addScore(Cribbage.DEALER, STARTERISJACK_SCORE, "starter", hand);
 		}
 	}
 	
 	public void ScoringGo(int player) {
-		Cribbage.addScore(player, GO_SCORE);
-		// LOGGING
+		Cribbage.addScore(player, GO_SCORE, "go", null);
 	}
 	
 	public void ScoringPlay(Hand hand, int player) {
@@ -69,13 +64,14 @@ public class ScoreSystem {
 	
 	public void ScoringShow(Hand starter, Hand hand, int player) {
 		Card tmpCard = starter.getFirst();
+		starter.remove(tmpCard, false);
 		CheckJackSameSuit(hand, tmpCard, player);
 		CheckFlush(hand, tmpCard, player);
-		starter.remove(tmpCard, false);
 		hand.insert(tmpCard, false);
 		CheckRunsInShow(hand, player);
 		CheckPairTriQuadInShow(hand, player);
-		CheckFifteen(hand, player, new ArrayList<Card>());
+		Hand empty = new Hand(Cribbage.getDeck());
+		CheckFifteen(hand, player, empty);
 		hand.remove(tmpCard, false);
 		starter.insert(tmpCard, false);
 	}
@@ -87,11 +83,11 @@ public class ScoreSystem {
 		int totalFaceValue = 0;
 		for (Card c: hand.getCardList()) totalFaceValue += Cribbage.cardValue(c);
 		if(totalFaceValue == FIFTEEN){
-			Cribbage.addScore(player, FIFTEEN_SCORE);
+			Cribbage.addScore(player, FIFTEEN_SCORE, "fifteen", null);
 			//LOGGING//
 		}
 		if(totalFaceValue == THIRTYONE){
-			Cribbage.addScore(player, THIRTYONE_SCORE);
+			Cribbage.addScore(player, THIRTYONE_SCORE, "thirtyone", null);
 			//LOGGING//
 		}
 	}
@@ -111,13 +107,13 @@ public class ScoreSystem {
 			if (n>=3 && hand.get(n-3).getRank() == recentRank) {
 				// Check for pair 4
 				if (n>=4 && hand.get(n-4).getRank() == recentRank) {
-					Cribbage.addScore(player, PAIR4_SCORE);
+					Cribbage.addScore(player, PAIR4_SCORE, "pair4", null);
 					return;
 				}
-				Cribbage.addScore(player, PAIR3_SCORE);
+				Cribbage.addScore(player, PAIR3_SCORE, "pair3", null);
 				return;
 			}
-			Cribbage.addScore(player, PAIR2_SCORE);
+			Cribbage.addScore(player, PAIR2_SCORE, "pair2", null);
 			return;
 		}
 	}
@@ -152,19 +148,19 @@ public class ScoreSystem {
 			// Yes it's a run
 			switch (n2) {
 			case 3:
-				Cribbage.addScore(player, RUN3_SCORE);
+				Cribbage.addScore(player, RUN3_SCORE, "run3", null);
 				break;
 			case 4:
-				Cribbage.addScore(player, RUN4_SCORE);
+				Cribbage.addScore(player, RUN4_SCORE, "run4", null);
 				break;
 			case 5:
-				Cribbage.addScore(player, RUN5_SCORE);
+				Cribbage.addScore(player, RUN5_SCORE, "run5", null);
 				break;
 			case 6:
-				Cribbage.addScore(player, RUN6_SCORE);
+				Cribbage.addScore(player, RUN6_SCORE, "run6", null);
 				break;
 			case 7:
-				Cribbage.addScore(player, RUN7_SCORE);
+				Cribbage.addScore(player, RUN7_SCORE, "run7", null);
 				break;
 			}
 		}
@@ -179,27 +175,18 @@ public class ScoreSystem {
 	 */
 	public void CheckRunsInShow(Hand hand, int player) {
 		for (int runLength=5; runLength>2; runLength--) {
-			ArrayList<Card[]> runCards = hand.getSequences(runLength);
-			if (runCards.size() != 0) {
+			Hand[] runHands = hand.extractSequences(runLength);
+			for (Hand runHand : runHands) {
 				switch(runLength) {
-					case 3:
-						Cribbage.addScore(player, RUN3_SCORE);
-						System.out.println("player" + player + "score run3 in show");
-						break;
-					case 4:
-						Cribbage.addScore(player, RUN4_SCORE);
-						System.out.println("player" + player + "score run4 in show");
-						break;
-					case 5:
-						Cribbage.addScore(player, RUN5_SCORE);
-						System.out.println("player" + player + "score run5 in show");
-						break;
-				}
-				for (Card[] cards : runCards) {
-					for (Card card : cards) {
-						System.out.println(card.toString());
-					}
-					// LOGGING //
+				case 3:
+					Cribbage.addScore(player, RUN3_SCORE, "run3", runHand);
+					break;
+				case 4:
+					Cribbage.addScore(player, RUN4_SCORE, "run4", runHand);
+					break;
+				case 5:
+					Cribbage.addScore(player, RUN5_SCORE, "run5", runHand);
+					break;
 				}
 			}
 		}
@@ -212,23 +199,17 @@ public class ScoreSystem {
 	 * @param player
 	 */
 	public void CheckPairTriQuadInShow(Hand hand, int player) {
-		ArrayList<Card[]> pairCardList = hand.getPairs();
-		for (Card[] cards : pairCardList) {
-			Cribbage.addScore(player, PAIR2_SCORE);
-			System.out.println("player" + player + "score pair2 in show");
-			// LOGGING
+		Hand[] pairHands = hand.extractPairs();
+		for (Hand pairHand : pairHands) {
+			Cribbage.addScore(player, PAIR2_SCORE, "pair2", pairHand);
 		}
-		ArrayList<Card[]> triCardList = hand.getTrips();
-		for (Card[] cards : triCardList) {
-			Cribbage.addScore(player, PAIR3_SCORE);
-			System.out.println("player" + player + "score pair3 in show");
-			// LOGGING
+		Hand[] triHands = hand.extractTrips();
+		for (Hand triHand : triHands) {
+			Cribbage.addScore(player, PAIR3_SCORE, "pair3", triHand);
 		}
-		ArrayList<Card[]> quadCardList = hand.getQuads();
-		for (Card[] cards : quadCardList) {
-			Cribbage.addScore(player, PAIR4_SCORE);
-			System.out.println("player" + player + "score pair4 in show");
-			// LOGGING
+		Hand[] quadHands = hand.extractQuads();
+		for (Hand quadHand : quadHands) {
+			Cribbage.addScore(player, PAIR4_SCORE, "pair4", quadHand);
 		}
 	}
 
@@ -239,25 +220,24 @@ public class ScoreSystem {
 	 * @param player
 	 * @param chosenCards
 	 */
-	public void CheckFifteen(Hand hand, int player, ArrayList<Card> chosenCards) {
+	public void CheckFifteen(Hand hand, int player, Hand chosenCards) {
 		// check sum of chosen cards group
 		int cardSum = 0;
-		for (Card card : chosenCards) {
+		for (Card card : chosenCards.getCardList()) {
 			cardSum += Cribbage.cardValue(card);
 		}
 		if (cardSum == FIFTEEN) {
-			Cribbage.addScore(player, FIFTEEN_SCORE);
-			System.out.println("player" + player + "score fifteen in show");
-			// LOGGING
+			Cribbage.addScore(player, FIFTEEN_SCORE, "fifteen", chosenCards);
+			
 		}
 		if (cardSum > FIFTEEN) return;
 		for (int i=0; i<hand.getNumberOfCards(); i++) {
 			Card card = hand.get(i);
 			hand.remove(card, false);
-			chosenCards.add(card);
+			chosenCards.insert(card, false);
 			CheckFifteen(hand, player, chosenCards);
 			// revert
-			chosenCards.remove(card);
+			chosenCards.remove(card, false);
 			hand.insert(card, false);
 		}
 	}
@@ -277,9 +257,11 @@ public class ScoreSystem {
 			}
 		}
 		if (starterCard.getSuit() == compareSuit) {
-			Cribbage.addScore(player, FLUSH5_SCORE);
+			hand.insert(starterCard, false);
+			Cribbage.addScore(player, FLUSH5_SCORE, "flush5", hand);
+			hand.remove(starterCard, false);
 		} else {
-			Cribbage.addScore(player, FLUSH4_SCORE);
+			Cribbage.addScore(player, FLUSH4_SCORE, "flush4", hand);
 		}
 	}
 	
@@ -294,7 +276,9 @@ public class ScoreSystem {
 		ArrayList<Card> cardList = hand.getCardList();
 		for (Card card : cardList) {
 			if (card.getRank() == Rank.JACK && card.getSuit() == starterSuit) {
-				Cribbage.addScore(player, JACKSAMESUIT_SCORE);
+				Hand tmpHand = new Hand(Cribbage.getDeck());
+				tmpHand.insert(starterSuit, Rank.JACK, false);
+				Cribbage.addScore(player, JACKSAMESUIT_SCORE, "jack", tmpHand);
 			}
 		}
 	}

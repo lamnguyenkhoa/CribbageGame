@@ -58,6 +58,7 @@ public class Cribbage extends CardGame {
 		return "[" + h1.getCardList().stream().map(c -> canonical(c)).collect(Collectors.joining(",")) + "]";
     }
 
+
 	static Random random;
 
 	public static <T extends Enum<?>> T randomEnum(Class<T> clazz){
@@ -95,6 +96,7 @@ public class Cribbage extends CardGame {
 
   private final String version = "0.1";
   static public final int nPlayers = 2;
+  static public final int DEALER = 1;
   public final int nStartCards = 6;
   public final int nDiscards = 2;
   private final int handWidth = 400;
@@ -142,12 +144,17 @@ private void initScore() {
   }
 
 //add score//
-public static void addScore(int player, int amount) throws ArrayIndexOutOfBoundsException{
+public static void addScore(int player, int amount, String type, Hand hand) throws ArrayIndexOutOfBoundsException{
 	scores[player] += amount;
+	if (hand == null) {
+		LoggingSystem.getInstance().logScore(player, scores[player], amount, type);
+	} else {
+		LoggingSystem.getInstance().logScore(player, scores[player], amount, type, hand);
+	}
 }
 
 
-private void updateScore(int player) {
+public void updateScore(int player) {
 	removeActor(scoreActors[player]);
 	scoreActors[player] = new TextActor(String.valueOf(scores[player]), Color.WHITE, bgColor, bigFont);
 	addActor(scoreActors[player], scoreLocations[player]);
@@ -174,6 +181,7 @@ private void deal(Hand pack, Hand[] hands) {
 	dealingOut(pack, hands);
 	for (int i = 0; i < nPlayers; i++) {
 		hands[i].sort(Hand.SortType.POINTPRIORITY, true);
+		LoggingSystem.getInstance().logDeal(i, hands[i]);
 	}
 	layouts[0].setStepDelay(0);
 }
@@ -186,10 +194,16 @@ private void discardToCrib() {
 	// crib.setTargetArea(cribTarget);
 	crib.draw();
 	for (IPlayer player: players) {
+		Hand discardHand = new Hand(deck);
 		for (int i = 0; i < nDiscards; i++) {
-			transfer(player.discard(), crib);
+			Card c = player.discard();
+			transfer(c, crib);
+			// make a copy version for logging
+			discardHand.insert(c.getSuit(), c.getRank(), false);
 		}
 		crib.sort(Hand.SortType.POINTPRIORITY, true);
+		discardHand.sort(Hand.SortType.POINTPRIORITY, true);
+		LoggingSystem.getInstance().logDiscard(player.id, discardHand);
 	}
 }
 
@@ -202,8 +216,8 @@ private void starter(Hand pack) {
 	Card dealt = randomCard(pack);
 	dealt.setVerso(false);
 	transfer(dealt, starter);
-	
-	// scoring
+	ScoreSystem.getInstance().ScoringStarter(starter);
+	LoggingSystem.getInstance().logStarter(starter.getFirst());
 
 }
 
@@ -251,9 +265,9 @@ private void play() {
 			}
 			currentPlayer = (currentPlayer+1) % nPlayers;
 		} else {
-			
 			s.lastPlayer = currentPlayer; // last Player to play a card in this segment
 			transfer(nextCard, s.segment);
+			LoggingSystem.getInstance().logPlay(currentPlayer, total(s.segment), nextCard);
 			//add play scoring//
 			scoreSystem.ScoringPlay(s.segment, currentPlayer);
 			updateScore(currentPlayer);
@@ -283,15 +297,17 @@ private void play() {
 
 void showHandsCrib() {
 	ScoreSystem scoreSystem = ScoreSystem.getInstance();
-	// score player 0 (non dealer)
-	scoreSystem.ScoringShow(starter, copiedHands[0], 0);
-	updateScore(0);
-	// score player 1 (dealer)
-	scoreSystem.ScoringShow(starter, copiedHands[1], 1);
-	updateScore(1);
+	LoggingSystem logger = LoggingSystem.getInstance();
+	// Scoring for player
+	for (int i=0; i<nPlayers; i++) {
+		logger.logShow(i, starter.getFirst(), copiedHands[i]);
+		scoreSystem.ScoringShow(starter, copiedHands[i], i);
+		updateScore(i);
+	}
 	// score crib (for dealer)
-	scoreSystem.ScoringShow(starter, crib, 1);
-	updateScore(1);
+	logger.logShow(DEALER, starter.getFirst(), crib);
+	scoreSystem.ScoringShow(starter, crib, DEALER);
+	updateScore(DEALER);
 }
 
 void backupCards() {
@@ -303,6 +319,10 @@ void backupCards() {
 			copiedHands[i].insert(cardSuit, cardRank, false);
 		}
 	}
+}
+
+public static Deck getDeck() {
+	return deck;
 }
 
   public Cribbage()

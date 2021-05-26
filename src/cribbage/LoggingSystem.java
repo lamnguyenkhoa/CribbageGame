@@ -4,6 +4,7 @@ import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Hand;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Properties;
 
 public class LoggingSystem {
@@ -85,38 +86,38 @@ public class LoggingSystem {
         // Log hand dealt to a single player
         String cardList;
         cardList = Cribbage.canonical(hand);
-        WriteToFile("deal,"+p(playerNumber)+","+cardList);
+        WriteToFile("deal,"+p(playerNumber)+","+cardList+'\n');
     }
 
     public void logDiscard(int playerNumber, Hand discarded){
         // Log cards discarded
         String cardList;
         cardList = Cribbage.canonical(discarded);
-        WriteToFile("discard,"+p(playerNumber)+","+cardList);
+        WriteToFile("discard,"+p(playerNumber)+","+cardList+'\n');
     }
 
     // Log starter card
-    public void logStarter(String rank, String suit){
-        WriteToFile("starter,"+rank+suit);
+    public void logStarter(Card card){
+        WriteToFile("starter,"+Cribbage.canonical(card)+'\n');
     }
 
     // Log an individual play
     public void logPlay(int playerNumber, int playValue, Card card){
-        WriteToFile("play,"+p(playerNumber)+","+playValue+","+card.getRank()+card.getSuit());
+        WriteToFile("play,"+p(playerNumber)+","+playValue+","+Cribbage.canonical(card)+'\n');
     }
 
     // Log a score update during play
     public void logScore(int playerNumber, int totScore, int score, String type){
-        WriteToFile("score,"+p(playerNumber)+","+totScore+","+score+","+type);
+        WriteToFile("score,"+p(playerNumber)+","+totScore+","+score+","+type+'\n');
     }
 
     // Log a score update during show (include hand of relevant cards)
     public void logScore(int playerNumber, int totScore, int score, String type, Hand hand){
-        WriteToFile("score,"+p(playerNumber)+","+totScore+","+score+","+type+","+Cribbage.canonical(hand));
+        WriteToFile("score,"+p(playerNumber)+","+totScore+","+score+","+type+","+Cribbage.canonical(hand)+'\n');
     }
 
-    public void logShow(int playerNumber, Card starter, Hand hand){
-        WriteToFile("show,"+p(playerNumber)+","+starter.getRank()+starter.getSuit()+"+"+Cribbage.canonical(hand));
+    public void logShow(int playerNumber, Card starterCard, Hand hand){
+        WriteToFile("show,"+p(playerNumber)+","+Cribbage.canonical(starterCard)+"+"+Cribbage.canonical(hand)+'\n');
     }
 
 }

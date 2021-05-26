@@ -3,48 +3,39 @@ package cribbage;
 import ch.aplu.jcardgame.*;
 
 import ch.aplu.jgamegrid.*;
-import cribbage.Cribbage.MyCardValues;
 import cribbage.Cribbage.Rank;
 import cribbage.Cribbage.Suit;
 
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.print.Printable;
-import java.io.FileReader;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.spi.LocaleNameProvider;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-
 
 //singleton facade class for scoring//
 public class ScoreSystem {
 
-	public static final int DEALER = 1;
-	public static final int STARTER_IS_JACK_SCORE = 2;
-	protected static int GO_SCORE = 1;
-	protected static int FIFTEEN = 15;
-	protected static int FIFTEEN_SCORE = 2;
-	protected static int THIRTYONE = 31;
-	protected static int THIRTYONE_SCORE = 2;
-	protected static int PAIR2_SCORE = 2;
-	protected static int PAIR3_SCORE = 6;
-	protected static int PAIR4_SCORE = 12;
-	protected static int RUN3_SCORE = 3;
-	protected static int RUN4_SCORE = 4;
-	protected static int RUN5_SCORE = 5;
-	protected static int RUN6_SCORE = 6;
-	protected static int RUN7_SCORE = 7;
+	public static int DEALER = 1;
+	private static int STARTERISJACK_SCORE = 2;
+	private static int GO_SCORE = 1;
+	private static int FIFTEEN = 15;
+	private static int FIFTEEN_SCORE = 2;
+	private static int THIRTYONE = 31;
+	private static int THIRTYONE_SCORE = 2;
+	private static int PAIR2_SCORE = 2;
+	private static int PAIR3_SCORE = 6;
+	private static int PAIR4_SCORE = 12;
+	private static int RUN3_SCORE = 3;
+	private static int RUN4_SCORE = 4;
+	private static int RUN5_SCORE = 5;
+	private static int RUN6_SCORE = 6;
+	private static int RUN7_SCORE = 7;
+	private static int FLUSH4_SCORE = 4;
+	private static int FLUSH5_SCORE = 5;
+	private static int JACKSAMESUIT_SCORE = 1;
 
 	private static ScoreSystem singleInstance = null;
 	
 	private ScoreSystem() {
 	}
 	
-	public static void loadProperties(Properties properties) {
+	public void loadProperties(Properties properties) {
 		
 	}
 	
@@ -59,7 +50,7 @@ public class ScoreSystem {
 	public void ScoringStarter(Hand hand) {
 		if(hand.getFirst().getRank() == Rank.JACK) {
 			//starter card is a jack, dealer gets 2 point//
-			Cribbage.addScore(DEALER, STARTER_IS_JACK_SCORE);
+			Cribbage.addScore(DEALER, STARTERISJACK_SCORE);
 			
 			//LOGGING//
 		}
@@ -78,6 +69,8 @@ public class ScoreSystem {
 	
 	public void ScoringShow(Hand starter, Hand hand, int player) {
 		Card tmpCard = starter.getFirst();
+		CheckJackSameSuit(hand, tmpCard, player);
+		CheckFlush(hand, tmpCard, player);
 		starter.remove(tmpCard, false);
 		hand.insert(tmpCard, false);
 		CheckRunsInShow(hand, player);
@@ -102,8 +95,14 @@ public class ScoreSystem {
 			//LOGGING//
 		}
 	}
-		
+	
+	/**
+	 * Check if the last placed card formed a pair2,pair3 or pair4.
+	 * @param hand
+	 * @param player
+	 */
 	public void CheckPairTriQuadInPlay(Hand hand, int player) {
+		LoggingSystem logger = LoggingSystem.getInstance();
 		int n = hand.getNumberOfCards();
 		Enum recentRank = hand.get(n-1).getRank();
 		// Check for pair 2
@@ -123,6 +122,12 @@ public class ScoreSystem {
 		}
 	}
 	
+	/**
+	 * Check if the last placed card form a of 3,4,5,6,7 in play. 
+	 * Runs cannot span pairs.
+	 * @param hand
+	 * @param player
+	 */
 	public void CheckRunsInPlay(Hand hand, int player) {
 		int n = hand.getNumberOfCards();
 		int lastNumber = 99999; 
@@ -201,6 +206,11 @@ public class ScoreSystem {
 		
 	}
 	
+	/**
+	 * Check for all combinations of pairs in The Show.
+	 * @param hand
+	 * @param player
+	 */
 	public void CheckPairTriQuadInShow(Hand hand, int player) {
 		ArrayList<Card[]> pairCardList = hand.getPairs();
 		for (Card[] cards : pairCardList) {
@@ -223,7 +233,7 @@ public class ScoreSystem {
 	}
 
 	/**
-	 * This is a subset problem. Use recursive.
+	 * This is a subset sum problem. Use recursive.
 	 * Check for all combination of cards that have sum equal to 15.
 	 * @param hand
 	 * @param player
@@ -252,7 +262,40 @@ public class ScoreSystem {
 		}
 	}
 	
-	public void jackSameUnit() {
-		
+	/**
+	 * Check if 4 card in hand is same suit. If yes, then check for a flush5.
+	 * @param hand
+	 * @param starterCard
+	 * @param player
+	 */
+	public void CheckFlush(Hand hand, Card starterCard, int player) {
+		Enum compareSuit = hand.getFirst().getSuit();
+		int n = hand.getNumberOfCards();
+		for (int i=0; i<n; i++) {
+			if (hand.get(i).getSuit() != compareSuit) {
+				return;
+			}
+		}
+		if (starterCard.getSuit() == compareSuit) {
+			Cribbage.addScore(player, FLUSH5_SCORE);
+		} else {
+			Cribbage.addScore(player, FLUSH4_SCORE);
+		}
+	}
+	
+	/**
+	 * Check if there are Jack cards in hand that have same suit with starter card.
+	 * @param hand
+	 * @param starterCard
+	 * @param player
+	 */
+	public void CheckJackSameSuit(Hand hand, Card starterCard, int player) {
+		Enum starterSuit = starterCard.getSuit();
+		ArrayList<Card> cardList = hand.getCardList();
+		for (Card card : cardList) {
+			if (card.getRank() == Rank.JACK && card.getSuit() == starterSuit) {
+				Cribbage.addScore(player, JACKSAMESUIT_SCORE);
+			}
+		}
 	}
 }

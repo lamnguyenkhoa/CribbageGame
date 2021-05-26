@@ -38,9 +38,9 @@ public class Cribbage extends CardGame {
 	/*
 	Canonical String representations of Suit, Rank, Card, and Hand
 	*/
-	String canonical(Suit s) { return s.toString().substring(0, 1); }
+	public static String canonical(Suit s) { return s.toString().substring(0, 1); }
 
-	String canonical(Rank r) {
+	public static String canonical(Rank r) {
 		switch (r) {
 			case ACE:case KING:case QUEEN:case JACK:case TEN:
 				return r.toString().substring(0, 1);
@@ -49,20 +49,14 @@ public class Cribbage extends CardGame {
 		}
 	}
 
-    String canonical(Card c) { return canonical((Rank) c.getRank()) + canonical((Suit) c.getSuit()); }
+    public static String canonical(Card c) { return canonical((Rank) c.getRank()) + canonical((Suit) c.getSuit()); }
 
-    String canonical(Hand h) {
+    public static String canonical(Hand h) {
 		Hand h1 = new Hand(deck); // Clone to sort without changing the original hand
 		for (Card C: h.getCardList()) h1.insert(C.getSuit(), C.getRank(), false);
 		h1.sort(Hand.SortType.POINTPRIORITY, false);
-		return "[" + h1.getCardList().stream().map(this::canonical).collect(Collectors.joining(",")) + "]";
+		return "[" + h1.getCardList().stream().map(c -> canonical(c)).collect(Collectors.joining(",")) + "]";
     }
-
-	class MyCardValues implements Deck.CardValues { // Need to generate a unique value for every card
-		public int[] values(Enum suit) {  // Returns the value for each card in the suit
-			return Stream.of(Rank.values()).mapToInt(r -> (((Rank) r).order-1)*(Suit.values().length)+suit.ordinal()).toArray();
-		}
-	}
 
 	static Random random;
 
@@ -106,7 +100,7 @@ public class Cribbage extends CardGame {
   private final int handWidth = 400;
   private final int cribWidth = 150;
   private final int segmentWidth = 180;
-  private final Deck deck = new Deck(Suit.values(), Rank.values(), "cover", new MyCardValues());
+  private final static Deck deck = new Deck(Suit.values(), Rank.values(), "cover", new MyCardValues());
   private final Location[] handLocations = {
 			  new Location(360, 75),
 			  new Location(360, 625)
@@ -320,6 +314,10 @@ void backupCards() {
     setTitle("Cribbage (V" + version + ") Constructed for UofM SWEN30006 with JGameGrid (www.aplu.ch)");
     setStatusText("Initializing...");
     initScore();
+    
+    LoggingSystem logger = LoggingSystem.getInstance();
+    logger.logSeed();
+    logger.logPlayer(nPlayers);
 
 	  Hand pack = deck.toHand(false);
 	  RowLayout layout = new RowLayout(starterLocation, 0);

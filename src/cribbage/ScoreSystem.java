@@ -2,14 +2,14 @@ package cribbage;
 
 import ch.aplu.jcardgame.*;
 
-import ch.aplu.jgamegrid.*;
 import cribbage.Cribbage.Rank;
-import cribbage.Cribbage.Suit;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
 //singleton facade class for scoring//
-public class ScoreSystem {
+public class ScoreSystem implements IScoring {
 
 	private static int STARTERISJACK_SCORE = 2;
 	private static int GO_SCORE = 1;
@@ -34,8 +34,42 @@ public class ScoreSystem {
 	private ScoreSystem() {
 	}
 	
-	public void loadProperties(Properties properties) {
-		
+	public static void loadScoreSetting(String filename) throws IOException {
+		Properties properties = new Properties();
+		properties.setProperty("starter", "2");
+		properties.setProperty("go", "1");
+		properties.setProperty("fifteen", "2");
+		properties.setProperty("thirtyone", "2");
+		properties.setProperty("pair2", "2");
+		properties.setProperty("pair3", "6");
+		properties.setProperty("pair4", "12");
+		properties.setProperty("run3", "3");
+		properties.setProperty("run4", "4");
+		properties.setProperty("run5", "5");
+		properties.setProperty("run6", "6");
+		properties.setProperty("run7", "7");
+		properties.setProperty("flush4", "4");
+		properties.setProperty("flush5", "5");
+		properties.setProperty("jack", "1");
+		// Read from file
+		try (FileReader inStream = new FileReader(filename)) {
+			properties.load(inStream);
+		}
+		STARTERISJACK_SCORE = Integer.parseInt(properties.getProperty("starter"));
+		GO_SCORE = Integer.parseInt(properties.getProperty("go"));
+		FIFTEEN_SCORE = Integer.parseInt(properties.getProperty("fifteen"));
+		THIRTYONE_SCORE = Integer.parseInt(properties.getProperty("thirtyone"));
+		PAIR2_SCORE = Integer.parseInt(properties.getProperty("pair2"));
+		PAIR3_SCORE = Integer.parseInt(properties.getProperty("pair3"));
+		PAIR4_SCORE = Integer.parseInt(properties.getProperty("pair4"));
+		RUN3_SCORE = Integer.parseInt(properties.getProperty("run3"));
+		RUN4_SCORE = Integer.parseInt(properties.getProperty("run4"));
+		RUN5_SCORE = Integer.parseInt(properties.getProperty("run5"));
+		RUN6_SCORE = Integer.parseInt(properties.getProperty("run6"));
+		RUN7_SCORE = Integer.parseInt(properties.getProperty("run7"));
+		FLUSH4_SCORE = Integer.parseInt(properties.getProperty("flush4"));
+		FLUSH5_SCORE = Integer.parseInt(properties.getProperty("flush5"));
+		JACKSAMESUIT_SCORE = Integer.parseInt(properties.getProperty("jack"));
 	}
 	
 	public static ScoreSystem getInstance() {
@@ -70,7 +104,7 @@ public class ScoreSystem {
 		hand.insert(tmpCard, false);
 		CheckRunsInShow(hand, player);
 		CheckPairTriQuadInShow(hand, player);
-		Hand empty = new Hand(Cribbage.getDeck());
+		Hand empty = new Hand(Cribbage.cribbage.getDeck());
 		CheckFifteen(hand, player, empty);
 		hand.remove(tmpCard, false);
 		starter.insert(tmpCard, false);
@@ -98,7 +132,6 @@ public class ScoreSystem {
 	 * @param player
 	 */
 	public void CheckPairTriQuadInPlay(Hand hand, int player) {
-		LoggingSystem logger = LoggingSystem.getInstance();
 		int n = hand.getNumberOfCards();
 		Enum recentRank = hand.get(n-1).getRank();
 		// Check for pair 2
@@ -267,6 +300,7 @@ public class ScoreSystem {
 	
 	/**
 	 * Check if there are Jack cards in hand that have same suit with starter card.
+	 * 
 	 * @param hand
 	 * @param starterCard
 	 * @param player
@@ -276,7 +310,7 @@ public class ScoreSystem {
 		ArrayList<Card> cardList = hand.getCardList();
 		for (Card card : cardList) {
 			if (card.getRank() == Rank.JACK && card.getSuit() == starterSuit) {
-				Hand tmpHand = new Hand(Cribbage.getDeck());
+				Hand tmpHand = new Hand(Cribbage.cribbage.getDeck());
 				tmpHand.insert(starterSuit, Rank.JACK, false);
 				Cribbage.addScore(player, JACKSAMESUIT_SCORE, "jack", tmpHand);
 			}

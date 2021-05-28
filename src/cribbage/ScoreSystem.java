@@ -1,3 +1,5 @@
+// W06 Team 02 [THU 03:15 PM]
+
 package cribbage;
 
 import ch.aplu.jcardgame.*;
@@ -11,30 +13,30 @@ import java.util.*;
 //singleton facade class for scoring//
 public class ScoreSystem implements IScoring {
 
-	private static int STARTERISJACK_SCORE = 2;
-	private static int GO_SCORE = 1;
-	private static int FIFTEEN = 15;
-	private static int FIFTEEN_SCORE = 2;
-	private static int THIRTYONE = 31;
-	private static int THIRTYONE_SCORE = 2;
-	private static int PAIR2_SCORE = 2;
-	private static int PAIR3_SCORE = 6;
-	private static int PAIR4_SCORE = 12;
-	private static int RUN3_SCORE = 3;
-	private static int RUN4_SCORE = 4;
-	private static int RUN5_SCORE = 5;
-	private static int RUN6_SCORE = 6;
-	private static int RUN7_SCORE = 7;
-	private static int FLUSH4_SCORE = 4;
-	private static int FLUSH5_SCORE = 5;
-	private static int JACKSAMESUIT_SCORE = 1;
+	private int STARTERISJACK_SCORE = 2;
+	private int GO_SCORE = 1;
+	private final int FIFTEEN = 15;
+	private int FIFTEEN_SCORE = 2;
+	private final int THIRTYONE = 31;
+	private int THIRTYONE_SCORE = 2;
+	private int PAIR2_SCORE = 2;
+	private int PAIR3_SCORE = 6;
+	private int PAIR4_SCORE = 12;
+	private int RUN3_SCORE = 3;
+	private int RUN4_SCORE = 4;
+	private int RUN5_SCORE = 5;
+	private int RUN6_SCORE = 6;
+	private int RUN7_SCORE = 7;
+	private int FLUSH4_SCORE = 4;
+	private int FLUSH5_SCORE = 5;
+	private int JACKSAMESUIT_SCORE = 1;
 
 	private static ScoreSystem singleInstance = null;
 	
 	private ScoreSystem() {
 	}
 	
-	public static void loadScoreSetting(String filename) throws IOException {
+	public void loadScoreSetting(String filename) throws IOException {
 		Properties properties = new Properties();
 		properties.setProperty("starter", "2");
 		properties.setProperty("go", "1");
@@ -79,23 +81,26 @@ public class ScoreSystem implements IScoring {
 		return singleInstance;
 	}	
 
-	
+	@Override
 	public void ScoringStarter(Hand hand) {
 		if(hand.getFirst().getRank() == Rank.JACK) {
 			Cribbage.addScore(Cribbage.DEALER, STARTERISJACK_SCORE, "starter", hand);
 		}
 	}
 	
+	@Override
 	public void ScoringGo(int player) {
 		Cribbage.addScore(player, GO_SCORE, "go", null);
 	}
 	
+	@Override
 	public void ScoringPlay(Hand hand, int player) {
 		CheckTotalsCardValue(hand, player);
 		CheckPairTriQuadInPlay(hand, player);
 		CheckRunsInPlay(hand, player);
 	}
 	
+	@Override
 	public void ScoringShow(Hand starter, Hand hand, int player) {
 		Card tmpCard = starter.getFirst();
 		starter.remove(tmpCard, false);

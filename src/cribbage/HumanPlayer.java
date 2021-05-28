@@ -1,3 +1,5 @@
+// W06 Team 02 [THU 03:15 PM]
+
 package cribbage;
 
 import ch.aplu.jcardgame.Deck;
@@ -30,7 +32,7 @@ public class HumanPlayer extends IPlayer {
 	}
 
 	@Override
-	Card selectToLay() {
+	Card selectToLay(Hand inPlayHand) {
 		if (hand.isEmpty()) {
 			return null;
 		} else {

@@ -1,3 +1,5 @@
+// W06 Team 02 [THU 03:15 PM]
+
 package cribbage;
 
 import ch.aplu.jcardgame.*;
@@ -24,9 +26,9 @@ public abstract class IPlayer {
 		return hand.isEmpty();
 	}
 
-	abstract Card selectToLay();
+	abstract Card selectToLay(Hand inPlayHand);
 
-	Card lay(int limit) {
+	Card lay(int limit, Hand inHandPlay) {
 		// System.out.println("lay(" + limit + ")");
 		// First, we take out unlayable cards and set them aside
 		Hand unlayable = new Hand(deck);
@@ -38,7 +40,7 @@ public abstract class IPlayer {
 			}
 		// hand.draw(); Cribbage.delay(1000);
 		// Now we choose a card
-		Card s = selectToLay();
+		Card s = selectToLay(inHandPlay);
 		// Then we re-insert those unlayable cards back to our hand
 		hand.insert(unlayable, true);
 		return s;

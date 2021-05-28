@@ -1,7 +1,7 @@
+// W06 Team 02 [THU 03:15 PM]
+
 package cribbage;
-
 // Cribbage.java
-
 import ch.aplu.jcardgame.*;
 import ch.aplu.jgamegrid.*;
 
@@ -97,34 +97,6 @@ public class Cribbage extends CardGame {
 	/*
 	 * Canonical String representations of Suit, Rank, Card, and Hand
 	 */
-	String canonical(Suit s) {
-		return s.toString().substring(0, 1);
-	}
-
-	public static String canonical(Rank r) {
-		switch (r) {
-		case ACE:
-		case KING:
-		case QUEEN:
-		case JACK:
-		case TEN:
-			return r.toString().substring(0, 1);
-		default:
-			return String.valueOf(r.value);
-		}
-	}
-
-	String canonical(Card c) {
-		return canonical((Rank) c.getRank()) + canonical((Suit) c.getSuit());
-	}
-
-	String canonical(Hand h) {
-		Hand h1 = new Hand(deck); // Clone to sort without changing the original hand
-		for (Card C : h.getCardList())
-			h1.insert(C.getSuit(), C.getRank(), false);
-		h1.sort(Hand.SortType.POINTPRIORITY, false);
-		return "[" + h1.getCardList().stream().map(c -> canonical(c)).collect(Collectors.joining(",")) + "]";
-	}
 
 	public static <T extends Enum<?>> T randomEnum(Class<T> clazz) {
 		int x = random.nextInt(clazz.getEnumConstants().length);
@@ -255,7 +227,7 @@ public class Cribbage extends CardGame {
 		s.reset(segments);
 		while (!(players[0].emptyHand() && players[1].emptyHand())) {
 			// System.out.println("segments.size() = " + segments.size());
-			Card nextCard = players[currentPlayer].lay(thirtyone - total(s.segment));
+			Card nextCard = players[currentPlayer].lay(thirtyone - total(s.segment), s.segment);
 			if (nextCard == null) {
 				if (s.go) {
 					// Another "go" after previous one with no intervening cards
@@ -378,7 +350,7 @@ public class Cribbage extends CardGame {
 		}
 
 		// Load score setting
-		ScoreSystem.loadScoreSetting("cribbage.properties");
+		ScoreSystem.getInstance().loadScoreSetting("cribbage.properties");
 
 		// Control Graphics
 		ANIMATE = Boolean.parseBoolean(cribbageProperties.getProperty("Animate"));

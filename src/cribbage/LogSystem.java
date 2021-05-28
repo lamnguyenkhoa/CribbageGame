@@ -1,3 +1,5 @@
+// W06 Team 02 [THU 03:15 PM]
+
 package cribbage;
 
 import ch.aplu.jcardgame.Card;
@@ -11,6 +13,7 @@ public class LogSystem implements ILogging{
 	private static LogSystem singleInstance = null;
 	private Properties cribbageProperties = new Properties();
 	private File file;
+	private boolean OnlyLogValidCombination = true; // invalid combi is combi with score <=0
 
 	private LogSystem() {
 		// Create new file cribbage.txt to start logging
@@ -45,6 +48,7 @@ public class LogSystem implements ILogging{
 		}
 	}
 
+	@Override
 	public void loadProperties() {
 		try (FileReader inStream = new FileReader("cribbage.properties")) {
 			this.cribbageProperties.load(inStream);
@@ -65,12 +69,14 @@ public class LogSystem implements ILogging{
 		return "P" + n;
 	}
 
+	@Override
 	public void logSeed() {
 		// Log seed property from properties file
 		String seed = cribbageProperties.getProperty("Seed"); // Seed property
 		WriteToFile("Seed," + seed + "\n");
 	}
 
+	@Override
 	public void logPlayer(int nPlayers) {
 		// Log player type from properties file
 		String playerType, player;
@@ -81,43 +87,52 @@ public class LogSystem implements ILogging{
 		}
 	}
 
+	@Override
 	public void logDeal(int playerNumber, Hand hand) {
 		// Log hand dealt to a single player
 		String cardList;
-		cardList = Cribbage.cribbage.canonical(hand);
+		cardList = CanonicalName.canonical(hand);
 		WriteToFile("deal," + p(playerNumber) + "," + cardList + '\n');
 	}
 
+	@Override
 	public void logDiscard(int playerNumber, Hand discarded) {
 		// Log cards discarded
 		String cardList;
-		cardList = Cribbage.cribbage.canonical(discarded);
+		cardList = CanonicalName.canonical(discarded);
 		WriteToFile("discard," + p(playerNumber) + "," + cardList + '\n');
 	}
 
+	@Override
 	// Log starter card
 	public void logStarter(Card card) {
-		WriteToFile("starter," + Cribbage.cribbage.canonical(card) + '\n');
+		WriteToFile("starter," + CanonicalName.canonical(card) + '\n');
 	}
 
+	@Override
 	// Log an individual play
 	public void logPlay(int playerNumber, int playValue, Card card) {
-		WriteToFile("play," + p(playerNumber) + "," + playValue + "," + Cribbage.cribbage.canonical(card) + '\n');
+		WriteToFile("play," + p(playerNumber) + "," + playValue + "," + CanonicalName.canonical(card) + '\n');
 	}
 
+	@Override
 	// Log a score update during show (include hand of relevant cards if exist)
-	public void logScore(int playerNumber, int totScore, int score, String type, Hand hand) {
+	public void logScore(int playerNumber, int totalScore, int score, String type, Hand hand) {
+		if (OnlyLogValidCombination && score<=0) {
+			return;
+		}
 		if (hand == null) {
-			WriteToFile("score," + p(playerNumber) + "," + totScore + "," + score + "," + type + '\n');
+			WriteToFile("score," + p(playerNumber) + "," + totalScore + "," + score + "," + type + '\n');
 		} else {
-			WriteToFile("score," + p(playerNumber) + "," + totScore + "," + score + "," + type + ","
-				+ Cribbage.cribbage.canonical(hand) + '\n');
+			WriteToFile("score," + p(playerNumber) + "," + totalScore + "," + score + "," + type + ","
+				+ CanonicalName.canonical(hand) + '\n');
 		}
 	}
 
+	@Override
 	public void logShow(int playerNumber, Card starterCard, Hand hand) {
-		WriteToFile("show," + p(playerNumber) + "," + Cribbage.cribbage.canonical(starterCard) + "+"
-				+ Cribbage.cribbage.canonical(hand) + '\n');
+		WriteToFile("show," + p(playerNumber) + "," + CanonicalName.canonical(starterCard) + "+"
+				+ CanonicalName.canonical(hand) + '\n');
 	}
 
 }

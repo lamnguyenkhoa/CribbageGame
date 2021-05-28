@@ -2,9 +2,18 @@
 
 package cribbage;
 
+import java.io.IOException;
+
 import ch.aplu.jcardgame.Hand;
 
 public interface IScoring {
+	/**
+	 * Load information such as valid combinations or different scoring rule
+	 * @param filename
+	 * @throws IOException
+	 */
+	public void loadScoreSetting(String filename) throws IOException;
+	
 	/**
 	 * Calculate score for the starter card.
 	 * @param hand

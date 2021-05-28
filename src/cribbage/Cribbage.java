@@ -11,7 +11,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Cribbage extends CardGame {
@@ -48,24 +47,9 @@ public class Cribbage extends CardGame {
 	static Random random;
 	static boolean ANIMATE;
 	static int SEED;
-
-	public enum Suit {
-		CLUBS, DIAMONDS, HEARTS, SPADES
-	}
-
-	public enum Rank {
-		// Order of cards is tied to card images
-		ACE(1, 1), KING(13, 10), QUEEN(12, 10), JACK(11, 10), TEN(10, 10), NINE(9, 9), EIGHT(8, 8), SEVEN(7, 7),
-		SIX(6, 6), FIVE(5, 5), FOUR(4, 4), THREE(3, 3), TWO(2, 2);
-
-		public final int order;
-		public final int value;
-
-		Rank(int order, int value) {
-			this.order = order;
-			this.value = value;
-		}
-	}
+	
+	private IScoring scorer = ScoreSystem.getInstance();
+	private ILogging logger = LogSystem.getInstance();
 
 	class MyCardValues implements Deck.CardValues { // Need to generate a unique value for every card
 		public int[] values(Enum suit) { // Returns the value for each card in the suit
@@ -91,7 +75,7 @@ public class Cribbage extends CardGame {
 	}
 
 	static int cardValue(Card c) {
-		return ((Cribbage.Rank) c.getRank()).value;
+		return ((Rank) c.getRank()).value;
 	}
 
 	/*
@@ -139,10 +123,9 @@ public class Cribbage extends CardGame {
 		}
 	}
 
-	public static void addScore(int player, int amount, String type, Hand hand) throws ArrayIndexOutOfBoundsException {
+	public void addScore(int player, int amount, String type, Hand hand) throws ArrayIndexOutOfBoundsException {
 		scores[player] += amount;
-		LogSystem.getInstance().logScore(player, scores[player], amount, type, null);
-		LogSystem.getInstance().logScore(player, scores[player], amount, type, hand);
+		logger.logScore(player, scores[player], amount, type, hand);
 	}
 
 	public void updateScore(int player) {
@@ -171,7 +154,7 @@ public class Cribbage extends CardGame {
 		dealingOut(pack, hands);
 		for (int i = 0; i < nPlayers; i++) {
 			hands[i].sort(Hand.SortType.POINTPRIORITY, true);
-			LogSystem.getInstance().logDeal(i, hands[i]);
+			logger.logDeal(i, hands[i]);
 		}
 		layouts[0].setStepDelay(0);
 	}
@@ -193,7 +176,7 @@ public class Cribbage extends CardGame {
 			}
 			crib.sort(Hand.SortType.POINTPRIORITY, true);
 			discardHand.sort(Hand.SortType.POINTPRIORITY, true);
-			LogSystem.getInstance().logDiscard(player.id, discardHand);
+			logger.logDiscard(player.id, discardHand);
 		}
 	}
 
@@ -206,8 +189,8 @@ public class Cribbage extends CardGame {
 		Card dealt = randomCard(pack);
 		dealt.setVerso(false);
 		transfer(dealt, starter);
-		ScoreSystem.getInstance().ScoringStarter(starter);
-		LogSystem.getInstance().logStarter(starter.getFirst());
+		scorer.ScoringStarter(starter);
+		logger.logStarter(starter.getFirst());
 
 	}
 
@@ -219,7 +202,6 @@ public class Cribbage extends CardGame {
 	}
 
 	private void play() {
-		ScoreSystem scoreSystem = ScoreSystem.getInstance();
 		final int thirtyone = 31;
 		List<Hand> segments = new ArrayList<>();
 		int currentPlayer = 0; // Player 1 is dealer
@@ -242,9 +224,9 @@ public class Cribbage extends CardGame {
 			} else {
 				s.lastPlayer = currentPlayer; // last Player to play a card in this segment
 				transfer(nextCard, s.segment);
-				LogSystem.getInstance().logPlay(currentPlayer, total(s.segment), nextCard);
+				logger.logPlay(currentPlayer, total(s.segment), nextCard);
 				// add play scoring//
-				scoreSystem.ScoringPlay(s.segment, currentPlayer);
+				scorer.ScoringPlay(s.segment, currentPlayer);
 				updateScore(currentPlayer);
 				//
 
@@ -265,23 +247,21 @@ public class Cribbage extends CardGame {
 		}
 		// score to last player if it not 31
 		if (s.lastPlayer != -1) {
-			scoreSystem.ScoringGo(s.lastPlayer);
+			scorer.ScoringGo(s.lastPlayer);
 			updateScore(s.lastPlayer);
 		}
 	}
 
 	void showHandsCrib() {
-		ScoreSystem scoreSystem = ScoreSystem.getInstance();
-		LogSystem logger = LogSystem.getInstance();
 		// Scoring for player
 		for (int i = 0; i < nPlayers; i++) {
 			logger.logShow(i, starter.getFirst(), copiedHands[i]);
-			scoreSystem.ScoringShow(starter, copiedHands[i], i);
+			scorer.ScoringShow(starter, copiedHands[i], i);
 			updateScore(i);
 		}
 		// score crib (for dealer)
 		logger.logShow(DEALER, starter.getFirst(), crib);
-		scoreSystem.ScoringShow(starter, crib, DEALER);
+		scorer.ScoringShow(starter, crib, DEALER);
 		updateScore(DEALER);
 	}
 
@@ -300,16 +280,15 @@ public class Cribbage extends CardGame {
 		return this.deck;
 	}
 
-	public Cribbage() {
+	public Cribbage() throws IOException {
 		super(850, 700, 30);
-		// game speed, higher = slower
 		setSimulationPeriod(1);
 		cribbage = this;
 		setTitle("Cribbage (V" + version + ") Constructed for UofM SWEN30006 with JGameGrid (www.aplu.ch)");
 		setStatusText("Initializing...");
 		initScore();
 
-		LogSystem logger = LogSystem.getInstance();
+		scorer.loadScoreSetting("cribbage.properties");
 		logger.logSeed();
 		logger.logPlayer(nPlayers);
 
@@ -348,9 +327,6 @@ public class Cribbage extends CardGame {
 		try (FileReader inStream = new FileReader("cribbage.properties")) {
 			cribbageProperties.load(inStream);
 		}
-
-		// Load score setting
-		ScoreSystem.getInstance().loadScoreSetting("cribbage.properties");
 
 		// Control Graphics
 		ANIMATE = Boolean.parseBoolean(cribbageProperties.getProperty("Animate"));

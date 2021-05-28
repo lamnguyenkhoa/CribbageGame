@@ -4,8 +4,6 @@ package cribbage;
 
 import ch.aplu.jcardgame.*;
 
-import cribbage.Cribbage.Rank;
-
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
@@ -36,6 +34,7 @@ public class ScoreSystem implements IScoring {
 	private ScoreSystem() {
 	}
 	
+	@Override
 	public void loadScoreSetting(String filename) throws IOException {
 		Properties properties = new Properties();
 		properties.setProperty("starter", "2");
@@ -84,20 +83,20 @@ public class ScoreSystem implements IScoring {
 	@Override
 	public void ScoringStarter(Hand hand) {
 		if(hand.getFirst().getRank() == Rank.JACK) {
-			Cribbage.addScore(Cribbage.DEALER, STARTERISJACK_SCORE, "starter", hand);
+			Cribbage.cribbage.addScore(Cribbage.DEALER, STARTERISJACK_SCORE, "starter", hand);
 		}
 	}
 	
 	@Override
 	public void ScoringGo(int player) {
-		Cribbage.addScore(player, GO_SCORE, "go", null);
+		Cribbage.cribbage.addScore(player, GO_SCORE, "go", null);
 	}
 	
 	@Override
 	public void ScoringPlay(Hand hand, int player) {
 		CheckTotalsCardValue(hand, player);
-		CheckPairTriQuadInPlay(hand, player);
 		CheckRunsInPlay(hand, player);
+		CheckPairTriQuadInPlay(hand, player);
 	}
 	
 	@Override
@@ -107,10 +106,12 @@ public class ScoreSystem implements IScoring {
 		CheckJackSameSuit(hand, tmpCard, player);
 		CheckFlush(hand, tmpCard, player);
 		hand.insert(tmpCard, false);
-		CheckRunsInShow(hand, player);
+		// CheckFifteen use recursive se we need another data type for easier implementation
+		ArrayList<Card> chosenCard = new ArrayList<Card>();
+		ArrayList<Card> cardList = hand.getCardList();
+		CheckFifteen(0, chosenCard, cardList, player);
 		CheckPairTriQuadInShow(hand, player);
-		Hand empty = new Hand(Cribbage.cribbage.getDeck());
-		CheckFifteen(hand, player, empty);
+		CheckRunsInShow(hand, player);
 		hand.remove(tmpCard, false);
 		starter.insert(tmpCard, false);
 	}
@@ -122,17 +123,17 @@ public class ScoreSystem implements IScoring {
 		int totalFaceValue = 0;
 		for (Card c: hand.getCardList()) totalFaceValue += Cribbage.cardValue(c);
 		if(totalFaceValue == FIFTEEN){
-			Cribbage.addScore(player, FIFTEEN_SCORE, "fifteen", null);
+			Cribbage.cribbage.addScore(player, FIFTEEN_SCORE, "fifteen", null);
 			//LOGGING//
 		}
 		if(totalFaceValue == THIRTYONE){
-			Cribbage.addScore(player, THIRTYONE_SCORE, "thirtyone", null);
+			Cribbage.cribbage.addScore(player, THIRTYONE_SCORE, "thirtyone", null);
 			//LOGGING//
 		}
 	}
 	
 	/**
-	 * Check if the last placed card formed a pair2,pair3 or pair4.
+	 * Check if the last placed card formed a pair2, pair3 or pair4.
 	 * @param hand
 	 * @param player
 	 */
@@ -145,13 +146,13 @@ public class ScoreSystem implements IScoring {
 			if (n>=3 && hand.get(n-3).getRank() == recentRank) {
 				// Check for pair 4
 				if (n>=4 && hand.get(n-4).getRank() == recentRank) {
-					Cribbage.addScore(player, PAIR4_SCORE, "pair4", null);
+					Cribbage.cribbage.addScore(player, PAIR4_SCORE, "pair4", null);
 					return;
 				}
-				Cribbage.addScore(player, PAIR3_SCORE, "pair3", null);
+				Cribbage.cribbage.addScore(player, PAIR3_SCORE, "pair3", null);
 				return;
 			}
-			Cribbage.addScore(player, PAIR2_SCORE, "pair2", null);
+			Cribbage.cribbage.addScore(player, PAIR2_SCORE, "pair2", null);
 			return;
 		}
 	}
@@ -186,19 +187,19 @@ public class ScoreSystem implements IScoring {
 			// Yes it's a run
 			switch (n2) {
 			case 3:
-				Cribbage.addScore(player, RUN3_SCORE, "run3", null);
+				Cribbage.cribbage.addScore(player, RUN3_SCORE, "run3", null);
 				break;
 			case 4:
-				Cribbage.addScore(player, RUN4_SCORE, "run4", null);
+				Cribbage.cribbage.addScore(player, RUN4_SCORE, "run4", null);
 				break;
 			case 5:
-				Cribbage.addScore(player, RUN5_SCORE, "run5", null);
+				Cribbage.cribbage.addScore(player, RUN5_SCORE, "run5", null);
 				break;
 			case 6:
-				Cribbage.addScore(player, RUN6_SCORE, "run6", null);
+				Cribbage.cribbage.addScore(player, RUN6_SCORE, "run6", null);
 				break;
 			case 7:
-				Cribbage.addScore(player, RUN7_SCORE, "run7", null);
+				Cribbage.cribbage.addScore(player, RUN7_SCORE, "run7", null);
 				break;
 			}
 		}
@@ -217,13 +218,13 @@ public class ScoreSystem implements IScoring {
 			for (Hand runHand : runHands) {
 				switch(runLength) {
 				case 3:
-					Cribbage.addScore(player, RUN3_SCORE, "run3", runHand);
+					Cribbage.cribbage.addScore(player, RUN3_SCORE, "run3", runHand);
 					break;
 				case 4:
-					Cribbage.addScore(player, RUN4_SCORE, "run4", runHand);
+					Cribbage.cribbage.addScore(player, RUN4_SCORE, "run4", runHand);
 					break;
 				case 5:
-					Cribbage.addScore(player, RUN5_SCORE, "run5", runHand);
+					Cribbage.cribbage.addScore(player, RUN5_SCORE, "run5", runHand);
 					break;
 				}
 			}
@@ -239,44 +240,50 @@ public class ScoreSystem implements IScoring {
 	public void CheckPairTriQuadInShow(Hand hand, int player) {
 		Hand[] pairHands = hand.extractPairs();
 		for (Hand pairHand : pairHands) {
-			Cribbage.addScore(player, PAIR2_SCORE, "pair2", pairHand);
+			Cribbage.cribbage.addScore(player, PAIR2_SCORE, "pair2", pairHand);
 		}
 		Hand[] triHands = hand.extractTrips();
 		for (Hand triHand : triHands) {
-			Cribbage.addScore(player, PAIR3_SCORE, "pair3", triHand);
+			Cribbage.cribbage.addScore(player, PAIR3_SCORE, "pair3", triHand);
 		}
 		Hand[] quadHands = hand.extractQuads();
 		for (Hand quadHand : quadHands) {
-			Cribbage.addScore(player, PAIR4_SCORE, "pair4", quadHand);
+			Cribbage.cribbage.addScore(player, PAIR4_SCORE, "pair4", quadHand);
 		}
 	}
 
 	/**
 	 * This is a subset sum problem. Use recursive.
 	 * Check for all combination of cards that have sum equal to 15.
-	 * @param hand
-	 * @param player
+	 * @param l
 	 * @param chosenCards
+	 * @param cardList
+	 * @param player
 	 */
-	public void CheckFifteen(Hand hand, int player, Hand chosenCards) {
-		// check sum of chosen cards group
+	public void CheckFifteen(int l, ArrayList<Card> chosenCards, ArrayList<Card> cardList, int player) {
 		int cardSum = 0;
-		for (Card card : chosenCards.getCardList()) {
+		for (Card card : chosenCards) {
 			cardSum += Cribbage.cardValue(card);
 		}
 		if (cardSum == FIFTEEN) {
-			Cribbage.addScore(player, FIFTEEN_SCORE, "fifteen", chosenCards);
-			
+			// convert ArrayList to Hand format for logging
+			Hand choseHand = new Hand(Cribbage.cribbage.getDeck());
+			for (Card card : chosenCards) {
+				choseHand.insert(card.getSuit(), card.getRank(), false);
+			}
+			Cribbage.cribbage.addScore(player, FIFTEEN_SCORE, "fifteen", choseHand);
 		}
 		if (cardSum > FIFTEEN) return;
-		for (int i=0; i<hand.getNumberOfCards(); i++) {
-			Card card = hand.get(i);
-			hand.remove(card, false);
-			chosenCards.insert(card, false);
-			CheckFifteen(hand, player, chosenCards);
-			// revert
-			chosenCards.remove(card, false);
-			hand.insert(card, false);
+		
+		for (int i=l; i< cardList.size(); i++) {
+			// Check if it is repeated
+			if (i>l && cardList.get(i) == cardList.get(i-1)) {
+				System.out.println("TRUE");
+				continue;
+			}
+			chosenCards.add(cardList.get(i));
+			CheckFifteen(i+1, chosenCards, cardList, player);
+			chosenCards.remove(cardList.get(i));
 		}
 	}
 	
@@ -296,10 +303,10 @@ public class ScoreSystem implements IScoring {
 		}
 		if (starterCard.getSuit() == compareSuit) {
 			hand.insert(starterCard, false);
-			Cribbage.addScore(player, FLUSH5_SCORE, "flush5", hand);
+			Cribbage.cribbage.addScore(player, FLUSH5_SCORE, "flush5", hand);
 			hand.remove(starterCard, false);
 		} else {
-			Cribbage.addScore(player, FLUSH4_SCORE, "flush4", hand);
+			Cribbage.cribbage.addScore(player, FLUSH4_SCORE, "flush4", hand);
 		}
 	}
 	
@@ -317,7 +324,7 @@ public class ScoreSystem implements IScoring {
 			if (card.getRank() == Rank.JACK && card.getSuit() == starterSuit) {
 				Hand tmpHand = new Hand(Cribbage.cribbage.getDeck());
 				tmpHand.insert(starterSuit, Rank.JACK, false);
-				Cribbage.addScore(player, JACKSAMESUIT_SCORE, "jack", tmpHand);
+				Cribbage.cribbage.addScore(player, JACKSAMESUIT_SCORE, "jack", tmpHand);
 			}
 		}
 	}

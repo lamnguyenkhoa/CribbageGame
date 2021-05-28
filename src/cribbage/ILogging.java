@@ -54,9 +54,9 @@ public interface ILogging {
 	 * @param totalScore
 	 * @param score
 	 * @param type
-	 * @param hand
+	 * @param hand (can be null)
 	 */
-	public void logScore(int playerNumber, int totalScore, int score, String type, Hand hand);
+	public void logScore(int player, int totalScore, int score, String type, Hand hand);
 
 	/**
 	 * Log a player's hand in The Show (with the starter card).
@@ -64,6 +64,6 @@ public interface ILogging {
 	 * @param starterCard
 	 * @param hand
 	 */
-	public void logShow(int playerNumber, Card starterCard, Hand hand);
+	public void logShow(int player, Card starterCard, Hand hand);
 
 }

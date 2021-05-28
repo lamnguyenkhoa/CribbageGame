@@ -35,6 +35,13 @@ public class LogSystem implements ILogging{
 		// Load properties (for player info)
 		loadProperties();
 	}
+	
+	public static LogSystem getInstance() {
+		if (singleInstance == null) {
+			singleInstance = new LogSystem();
+		}
+		return singleInstance;
+	}
 
 	private void WriteToFile(String statement) {
 		try {
@@ -57,12 +64,6 @@ public class LogSystem implements ILogging{
 		}
 	}
 
-	public static LogSystem getInstance() {
-		if (singleInstance == null) {
-			singleInstance = new LogSystem();
-		}
-		return singleInstance;
-	}
 
 	// convert int to string of player number "Pn"
 	private String p(int n) {
@@ -111,27 +112,27 @@ public class LogSystem implements ILogging{
 
 	@Override
 	// Log an individual play
-	public void logPlay(int playerNumber, int playValue, Card card) {
-		WriteToFile("play," + p(playerNumber) + "," + playValue + "," + CanonicalName.canonical(card) + '\n');
+	public void logPlay(int player, int playValue, Card card) {
+		WriteToFile("play," + p(player) + "," + playValue + "," + CanonicalName.canonical(card) + '\n');
 	}
 
 	@Override
 	// Log a score update during show (include hand of relevant cards if exist)
-	public void logScore(int playerNumber, int totalScore, int score, String type, Hand hand) {
+	public void logScore(int player, int totalScore, int score, String type, Hand hand) {
 		if (OnlyLogValidCombination && score<=0) {
 			return;
 		}
 		if (hand == null) {
-			WriteToFile("score," + p(playerNumber) + "," + totalScore + "," + score + "," + type + '\n');
+			WriteToFile("score," + p(player) + "," + totalScore + "," + score + "," + type + '\n');
 		} else {
-			WriteToFile("score," + p(playerNumber) + "," + totalScore + "," + score + "," + type + ","
+			WriteToFile("score," + p(player) + "," + totalScore + "," + score + "," + type + ","
 				+ CanonicalName.canonical(hand) + '\n');
 		}
 	}
 
 	@Override
-	public void logShow(int playerNumber, Card starterCard, Hand hand) {
-		WriteToFile("show," + p(playerNumber) + "," + CanonicalName.canonical(starterCard) + "+"
+	public void logShow(int player, Card starterCard, Hand hand) {
+		WriteToFile("show," + p(player) + "," + CanonicalName.canonical(starterCard) + "+"
 				+ CanonicalName.canonical(hand) + '\n');
 	}
 

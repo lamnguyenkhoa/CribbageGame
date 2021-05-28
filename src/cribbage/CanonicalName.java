@@ -5,8 +5,6 @@ import java.util.stream.Collectors;
 import ch.aplu.jcardgame.Card;
 import ch.aplu.jcardgame.Deck;
 import ch.aplu.jcardgame.Hand;
-import cribbage.Cribbage.Rank;
-import cribbage.Cribbage.Suit;
 
 public class CanonicalName{
 

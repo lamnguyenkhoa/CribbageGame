@@ -126,6 +126,7 @@ public class Cribbage extends CardGame {
 	public void addScore(int player, int amount, String type, Hand hand) throws ArrayIndexOutOfBoundsException {
 		scores[player] += amount;
 		logger.logScore(player, scores[player], amount, type, hand);
+		updateScore(player);
 	}
 
 	public void updateScore(int player) {
@@ -215,7 +216,7 @@ public class Cribbage extends CardGame {
 					// Another "go" after previous one with no intervening cards
 					// lastPlayer gets 1 point for a "go"
 					s.newSegment = true;
-					System.out.println("GO!");
+					scorer.ScoringGo(s.lastPlayer);
 				} else {
 					// currentPlayer says "go"
 					s.go = true;
@@ -227,9 +228,7 @@ public class Cribbage extends CardGame {
 				logger.logPlay(currentPlayer, total(s.segment), nextCard);
 				// add play scoring//
 				scorer.ScoringPlay(s.segment, currentPlayer);
-				updateScore(currentPlayer);
-				//
-
+				
 				if (total(s.segment) == thirtyone) {
 					// lastPlayer gets 2 points for a 31
 					s.newSegment = true;
@@ -240,15 +239,16 @@ public class Cribbage extends CardGame {
 					}
 				}
 			}
+			
+			// Reset segment
 			if (s.newSegment) {
 				segments.add(s.segment);
 				s.reset(segments);
 			}
 		}
-		// score to last player if it not 31
+		// score to last player if it not 31, when both run out of card
 		if (s.lastPlayer != -1) {
 			scorer.ScoringGo(s.lastPlayer);
-			updateScore(s.lastPlayer);
 		}
 	}
 
@@ -257,12 +257,10 @@ public class Cribbage extends CardGame {
 		for (int i = 0; i < nPlayers; i++) {
 			logger.logShow(i, starter.getFirst(), copiedHands[i]);
 			scorer.ScoringShow(starter, copiedHands[i], i);
-			updateScore(i);
 		}
 		// score crib (for dealer)
 		logger.logShow(DEALER, starter.getFirst(), crib);
 		scorer.ScoringShow(starter, crib, DEALER);
-		updateScore(DEALER);
 	}
 
 	void backupCards() {

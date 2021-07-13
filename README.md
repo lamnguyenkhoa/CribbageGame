@@ -1,5 +1,6 @@
 # CribbageGame
-Project 2 of SWEN30006, 2021
+Project 2 of SWEN30006, 2021.
+
 This project used Eclipse IDE and JGameGrid library.
 
 Summary: We are given a card game Cribbage framework and have to implemented scoring and logging features.
